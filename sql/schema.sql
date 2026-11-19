@@ -19,3 +19,7 @@ CREATE TABLE IF NOT EXISTS students (
     status         VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',  -- 'ACTIVE' or 'ARCHIVED'
     FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
+
+INSERT INTO users ( username, password, role) values
+("Admin1", "123", "Enrollment Staff" ),
+("Admin2", "123", "Administrator");
