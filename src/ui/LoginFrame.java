@@ -1,3 +1,6 @@
+package ui;
+
+import model.User;
 import java.awt.*;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
