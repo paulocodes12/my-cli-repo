@@ -1,1 +1,3 @@
-# My CLI Repo
+#TERO - UI DESIGN
+#BERIDO - BACKEND 
+#BUTALID - SQL and Debugging
