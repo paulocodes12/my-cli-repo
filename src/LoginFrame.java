@@ -131,7 +131,7 @@ public class LoginFrame extends JFrame {
             return;
         }
 
-        User user = new User();
+        User user = new User();            // uses the User class from User.java
         if (user.login(username, password)) {
             JOptionPane.showMessageDialog(this,
                     "Login successful!\nWelcome, " + user.getUsername() + " (" + user.getRole() + ")",
