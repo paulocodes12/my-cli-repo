@@ -1,9 +1,9 @@
 package ui;
 
-import model.User;
 import java.awt.*;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import model.User;
 
 // The first window of the system: the Login screen.
 public class LoginFrame extends JFrame {
@@ -136,10 +136,8 @@ public class LoginFrame extends JFrame {
 
         User user = new User();
         if (user.login(username, password)) {
-            JOptionPane.showMessageDialog(this,
-                    "Login successful!\nWelcome, " + user.getUsername() + " (" + user.getRole() + ")",
-                    "Login", JOptionPane.INFORMATION_MESSAGE);
-            passwordField.setText("");
+          dispose();
+            new DashboardFrame(user).setVisible(true);
         } else {
             messageLabel.setText("Wrong username or password.");
             passwordField.setText("");
