@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS users (
     user_id   INT AUTO_INCREMENT PRIMARY KEY,
     username  VARCHAR(50)  NOT NULL UNIQUE,
     password  VARCHAR(100) NOT NULL,
-    role      VARCHAR(20)  NOT NULL      -- 'ADMIN', 'STAFF', 'STUDENT'
+    role      VARCHAR(20)  NOT NULL      -- 'Administrator' or 'Enrollment Staff'
 );
 
 CREATE TABLE IF NOT EXISTS students (
@@ -16,10 +16,10 @@ CREATE TABLE IF NOT EXISTS students (
     name           VARCHAR(100) NOT NULL,
     address        VARCHAR(200),
     year_level     INT NOT NULL,
-    status         VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',  -- 'ACTIVE' or 'ARCHIVED'
+    status         VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',  -- record state: 'ACTIVE' or 'ARCHIVED' (not enrollment status)
     FOREIGN KEY (user_id) REFERENCES users(user_id)
 );
 
-INSERT INTO users ( username, password, role) values
-("Admin1", "123", "Enrollment Staff" ),
-("Admin2", "123", "Administrator");
+INSERT IGNORE INTO users (username, password, role) VALUES
+('Admin1', '123', 'Enrollment Staff'),
+('Admin2', '123', 'Administrator');
