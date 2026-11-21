@@ -1,7 +1,5 @@
 package ui;
 
-import model.Student;
-import model.User;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -9,6 +7,8 @@ import java.util.List;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
+import model.Student;
+import model.User;
 
 public class DashboardFrame extends JFrame {
 
@@ -18,7 +18,6 @@ public class DashboardFrame extends JFrame {
     private JTextField nameField;
     private JTextField addressField;
     private JComboBox<Integer> yearLevelBox;
-    private JComboBox<String> statusBox;
     private JTextField searchField;
 
     private JTable studentTable;
@@ -37,7 +36,7 @@ public class DashboardFrame extends JFrame {
         add(buildHeader(), BorderLayout.NORTH);
         add(buildMainContent(), BorderLayout.CENTER);
 
-        loadStudents(Student.getAllStudents());
+        loadStudents(Student.viewStudent());
     }
 
     private JPanel buildHeader() {
@@ -103,13 +102,11 @@ public class DashboardFrame extends JFrame {
         nameField = new JTextField();
         addressField = new JTextField();
         yearLevelBox = new JComboBox<>(new Integer[]{1, 2, 3, 4});
-        statusBox = new JComboBox<>(new String[]{"Enrolled", "Pending", "Dropped"});
 
         styleInput(studentNumberField);
         styleInput(nameField);
         styleInput(addressField);
         styleInput(yearLevelBox);
-        styleInput(statusBox);
 
         JButton addBtn = makeActionButton("Add Student", LoginFrame.BLUE);
         addBtn.addActionListener(e -> handleAdd());
@@ -117,8 +114,8 @@ public class DashboardFrame extends JFrame {
         JButton updateBtn = makeActionButton("Update Selected", new Color(34, 139, 84));
         updateBtn.addActionListener(e -> handleUpdate());
 
-        JButton deleteBtn = makeActionButton("Delete Selected", new Color(200, 50, 50));
-        deleteBtn.addActionListener(e -> handleDelete());
+        JButton archiveBtn = makeActionButton("Archive Selected", new Color(200, 50, 50));
+        archiveBtn.addActionListener(e -> handleArchive());
 
         JButton clearBtn = makeActionButton("Clear Form", new Color(110, 118, 130));
         clearBtn.addActionListener(e -> clearForm());
@@ -137,14 +134,14 @@ public class DashboardFrame extends JFrame {
         formPanel.add(makeLabel("Year Level"));
         formPanel.add(yearLevelBox);
         formPanel.add(Box.createVerticalStrut(10));
-        formPanel.add(makeLabel("Enrollment Status"));
-        formPanel.add(statusBox);
-        formPanel.add(Box.createVerticalStrut(20));
+        formPanel.add(Box.createVerticalStrut(10));
         formPanel.add(addBtn);
         formPanel.add(Box.createVerticalStrut(8));
         formPanel.add(updateBtn);
-        formPanel.add(Box.createVerticalStrut(8));
-        formPanel.add(deleteBtn);
+        if (currentUser.isAdmin()) {                 // only the admin sees Archive
+            formPanel.add(Box.createVerticalStrut(8));
+            formPanel.add(archiveBtn);
+        }
         formPanel.add(Box.createVerticalStrut(8));
         formPanel.add(clearBtn);
 
@@ -173,7 +170,7 @@ public class DashboardFrame extends JFrame {
         searchBtn.addActionListener(e -> {
             String keyword = searchField.getText().trim();
             if (keyword.isEmpty()) {
-                loadStudents(Student.getAllStudents());
+                loadStudents(Student.viewStudent());
             } else {
                 loadStudents(Student.searchStudents(keyword));
             }
@@ -183,7 +180,7 @@ public class DashboardFrame extends JFrame {
         refreshBtn.setFont(new Font("SansSerif", Font.PLAIN, 13));
         refreshBtn.addActionListener(e -> {
             searchField.setText("");
-            loadStudents(Student.getAllStudents());
+            loadStudents(Student.viewStudent());
         });
 
         JPanel btnGroup = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 0));
@@ -196,7 +193,7 @@ public class DashboardFrame extends JFrame {
         topBar.add(btnGroup, BorderLayout.EAST);
 
         // Table
-        String[] columns = {"ID", "Student Number", "Name", "Address", "Year", "Status"};
+        String[] columns = {"ID", "Student Number", "Name", "Address", "Year"};
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -222,7 +219,6 @@ public class DashboardFrame extends JFrame {
                     nameField.setText(tableModel.getValueAt(row, 2).toString());
                     addressField.setText(tableModel.getValueAt(row, 3) != null ? tableModel.getValueAt(row, 3).toString() : "");
                     yearLevelBox.setSelectedItem(tableModel.getValueAt(row, 4));
-                    statusBox.setSelectedItem(tableModel.getValueAt(row, 5).toString());
                 }
             }
         });
@@ -240,8 +236,7 @@ public class DashboardFrame extends JFrame {
                     s.getStudentNumber(),
                     s.getName(),
                     s.getAddress(),
-                    s.getYearLevel(),
-                    s.getStatus()
+                    s.getYearLevel()
             });
         }
     }
@@ -251,18 +246,17 @@ public class DashboardFrame extends JFrame {
         String name = nameField.getText().trim();
         String address = addressField.getText().trim();
         int year = (Integer) yearLevelBox.getSelectedItem();
-        String status = (String) statusBox.getSelectedItem();
 
         if (studNum.isEmpty() || name.isEmpty() || address.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Please fill in Student Number, Name, and Address.", "Validation", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
-        Student student = new Student(currentUser.getUserID(), studNum, name, address, year, status);
+        Student student = new Student(0, studNum, name, address, year);
         if (student.addStudent()) {
             JOptionPane.showMessageDialog(this, "Student enrolled successfully!");
             clearForm();
-            loadStudents(Student.getAllStudents());
+            loadStudents(Student.viewStudent());
         } else {
             JOptionPane.showMessageDialog(this, "Failed to add student. Check if Student Number already exists.", "Error", JOptionPane.ERROR_MESSAGE);
         }
@@ -278,40 +272,44 @@ public class DashboardFrame extends JFrame {
         String name = nameField.getText().trim();
         String address = addressField.getText().trim();
         int year = (Integer) yearLevelBox.getSelectedItem();
-        String status = (String) statusBox.getSelectedItem();
 
         if (studNum.isEmpty() || name.isEmpty() || address.isEmpty()) {
             JOptionPane.showMessageDialog(this, "All fields are required.", "Validation", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
-        Student student = new Student(selectedStudentID, currentUser.getUserID(), studNum, name, address, year, status);
+        Student student = new Student(selectedStudentID, 0, studNum, name, address, year);
         if (student.updateStudent()) {
             JOptionPane.showMessageDialog(this, "Student updated successfully!");
             clearForm();
-            loadStudents(Student.getAllStudents());
+            loadStudents(Student.viewStudent());
         } else {
             JOptionPane.showMessageDialog(this, "Failed to update student.", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    private void handleDelete() {
+    private void handleArchive() {
         if (selectedStudentID == -1) {
             JOptionPane.showMessageDialog(this, "Select a student row from the table first.", "Selection Required", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
+        if (!currentUser.isAdmin()) {
+            JOptionPane.showMessageDialog(this, "Only the Administrator can archive records.");
+            return;
+        }
+
         int confirm = JOptionPane.showConfirmDialog(this,
-                "Are you sure you want to delete this student record?",
-                "Confirm Delete", JOptionPane.YES_NO_OPTION);
+                "Archive this student record? It will be hidden from the list but kept in the database.",
+                "Confirm Archive", JOptionPane.YES_NO_OPTION);
 
         if (confirm == JOptionPane.YES_OPTION) {
-            if (Student.deleteStudent(selectedStudentID)) {
-                JOptionPane.showMessageDialog(this, "Student deleted.");
+            if (Student.archiveStudent(selectedStudentID)) {
+                JOptionPane.showMessageDialog(this, "Student archived.");
                 clearForm();
-                loadStudents(Student.getAllStudents());
+                loadStudents(Student.viewStudent());
             } else {
-                JOptionPane.showMessageDialog(this, "Failed to delete student.", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Failed to archive student.", "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
@@ -322,7 +320,6 @@ public class DashboardFrame extends JFrame {
         nameField.setText("");
         addressField.setText("");
         yearLevelBox.setSelectedIndex(0);
-        statusBox.setSelectedIndex(0);
         studentTable.clearSelection();
     }
 

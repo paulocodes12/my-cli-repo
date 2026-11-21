@@ -55,6 +55,11 @@ public class User {
         this.role = null;
     }
 
+    // True if this user is the administrator (accepts either role spelling)
+    public boolean isAdmin() {
+        return "Administrator".equalsIgnoreCase(role) || "ADMIN".equalsIgnoreCase(role);
+    }
+
     // Getters and setters
     public int getUserID() { return userID; }
     public void setUserID(int userID) { this.userID = userID; }
